@@ -20,12 +20,18 @@ public class PlayerMovement2D : MonoBehaviour
 
     void Start()
     {
+        Application.targetFrameRate = 60;
         rb = GetComponent<Rigidbody2D>();
         jumpsLeft = maxJumps;
     }
 
     void Update()
     {
+
+
+        // 地面检测
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
+        
         // 1. 地面检测：判断是否踩在地面上
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
 
@@ -54,16 +60,6 @@ public class PlayerMovement2D : MonoBehaviour
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             
             jumpsLeft--;
-        }
-    }
-
-    // 在编辑器里画出检测范围，方便调试
-    private void OnDrawGizmosSelected()
-    {
-        if (groundCheck != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(groundCheck.position, checkRadius);
         }
     }
 }
