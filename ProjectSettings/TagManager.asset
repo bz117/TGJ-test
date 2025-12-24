@@ -6,6 +6,7 @@ TagManager:
   tags:
   - obstacle
   - SoundWave
+  - Thorns
   layers:
   - Default
   - TransparentFX
@@ -54,4 +55,7 @@ TagManager:
     locked: 0
   - name: player
     uniqueID: 1966570883
+    locked: 0
+  - name: Underground
+    uniqueID: 2598409897
     locked: 0

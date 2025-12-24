@@ -1,65 +1,118 @@
 using UnityEngine;
 
-public class PlayerMovement2D : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
-    [Header("移动设置")]
-    public float moveSpeed = 8f;
+    [Header("功能开关")]
+    public bool canMove = true;      // 是否能移动
+    public bool canJump = true;      // 是否能跳跃
+    public bool canDoubleJump = true;// 是否允许二段跳
+    public bool canDash = true;      // 是否能冲刺加速
+
+    [Header("物理参数")]
+    public float walkSpeed = 8f;
+    public float dashSpeed = 14f;
     public float jumpForce = 12f;
 
-    [Header("二段跳设置")]
-    public int maxJumps = 2; // 最大跳跃次数
-    private int jumpsLeft;   // 剩余跳跃次数
-
-    [Header("地面检测")]
+    [Header("检测设置")]
     public Transform groundCheck;
     public float checkRadius = 0.2f;
     public LayerMask groundLayer;
-    private bool isGrounded;
 
+    // 内部状态
     private Rigidbody2D rb;
+    private Animator anim;
+    private int jumpsLeft;
+    private bool isGrounded;
+    private float horizontalInput;
 
     void Start()
     {
-        Application.targetFrameRate = 60;
         rb = GetComponent<Rigidbody2D>();
-        jumpsLeft = maxJumps;
+        anim = GetComponent<Animator>();
     }
 
     void Update()
     {
+        // 始终更新地面检测
+        CheckGround();
 
+        // 处理功能模块
+        if (canMove) HandleMovementInput();
+        if (canJump) HandleJumpInput();
 
-        // 地面检测
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
-        
-        // 1. 地面检测：判断是否踩在地面上
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
+        //UpdateAnimation();
+        Flip();
+    }
 
-        if (isGrounded && rb.velocity.y <= 0)
+    void FixedUpdate()
+    {
+        if (canMove)
         {
-            jumpsLeft = maxJumps; // 回到地面重置次数
+            ApplyMovement();
         }
-
-        // 2. 左右移动逻辑 (保留原来的左右，移除上下对速度的控制)
-        float moveX = Input.GetAxisRaw("Horizontal");
-        rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
-
-        // 3. 跳跃逻辑 (检测 W 键或空格)
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetButtonDown("Jump"))
+        else
         {
-            Jump();
+            // 如果禁用移动，则水平速度归零，但保留垂直速度（如重力）
+            rb.velocity = new Vector2(0, rb.velocity.y);
+        }
+    }
+
+    // --- 功能逻辑拆分 ---
+
+    void CheckGround()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
+        if (isGrounded && rb.velocity.y <= 0.1f)
+        {
+            // 如果没开启二段跳，最大次数就是1，否则是2
+            jumpsLeft = canDoubleJump ? 2 : 1;
+        }
+    }
+
+    void HandleMovementInput()
+    {
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+    }
+
+    void ApplyMovement()
+    {
+        // 判断冲刺逻辑：只有开启了 canDash 且按住 Shift 才会变快
+        bool isDashing = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        float targetSpeed = (canDash && isDashing) ? dashSpeed : walkSpeed;
+        rb.velocity = new Vector2(horizontalInput * targetSpeed, rb.velocity.y);
+    }
+
+    void HandleJumpInput()
+    {
+        if (Input.GetButtonDown("Jump"))
+        {
+            // 如果在地板上，或者还有剩余跳跃次数
+            if (isGrounded || jumpsLeft > 0)
+            {
+                Jump();
+            }
         }
     }
 
     void Jump()
     {
-        if (jumpsLeft > 0)
-        {
-            // 清除之前的垂直速度，确保二段跳力道一致
-            rb.velocity = new Vector2(rb.velocity.x, 0f);
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            
-            jumpsLeft--;
-        }
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        jumpsLeft--;
     }
+
+    // --- 辅助功能 ---
+
+    void Flip()
+    {
+        if (horizontalInput > 0) transform.localScale = new Vector3(20, 20, 0);
+        else if (horizontalInput < 0) transform.localScale = new Vector3(-20, 20, 0);
+    }
+
+    // void UpdateAnimation()
+    // {
+    //     if (anim == null) return;
+    //     anim.SetFloat("speed", Mathf.Abs(horizontalInput));
+    //     anim.SetBool("isGrounded", isGrounded);
+    //     anim.SetFloat("verticalVelocity", rb.velocity.y);
+    // }
 }
