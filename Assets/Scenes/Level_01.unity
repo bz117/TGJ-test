@@ -1183,7 +1183,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &410591355
 Transform:
   m_ObjectHideFlags: 0
@@ -3375,7 +3375,7 @@ Transform:
   m_GameObject: {fileID: 1192746552}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3263, y: -1990, z: 0}
+  m_LocalPosition: {x: 3466, y: 1724, z: 0}
   m_LocalScale: {x: 20, y: 20, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3395,9 +3395,9 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0
-  m_GravityScale: 10
+  m_LinearDrag: 1
+  m_AngularDrag: 0.05
+  m_GravityScale: 110
   m_Material: {fileID: 6200000, guid: c80a1df68a9f549f99eaf68b97c58c02, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -3460,9 +3460,9 @@ MonoBehaviour:
   canJump: 1
   canDoubleJump: 1
   canDash: 1
-  walkSpeed: 400
+  walkSpeed: 500
   dashSpeed: 1000
-  jumpForce: 200
+  jumpForce: 1000
   groundCheck: {fileID: 2137097601}
   checkRadius: 10
   groundLayer:
@@ -4963,7 +4963,7 @@ AreaEffector2D:
     m_Bits: 4294967295
   m_UseGlobalAngle: 0
   m_ForceAngle: 90
-  m_ForceMagnitude: 200
+  m_ForceMagnitude: 1800
   m_ForceVariation: 0
   m_ForceTarget: 0
   m_Drag: 0
@@ -5000,7 +5000,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 1
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.080486104}
+  m_Offset: {x: 0, y: 0.14629602}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -5011,7 +5011,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 0.5902518}
+  m_Size: {x: 1, y: 1.0438162}
   m_EdgeRadius: 0
 --- !u!224 &1999368617
 RectTransform:
