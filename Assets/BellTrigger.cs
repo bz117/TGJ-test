@@ -1,4 +1,5 @@
 using UnityEngine;
+using System; // 必须引用此命名空间
 
 public class BellTrigger : MonoBehaviour
 {
@@ -6,16 +7,21 @@ public class BellTrigger : MonoBehaviour
     private SpriteRenderer _spriteRenderer;
     private AudioSource audioSource;
     
-    // 当发生碰撞时触发（物体必须有 Collider，且至少一个有 Rigidbody）
+    // 添加一个静态事件，让管理器可以监听
+    public static event Action OnBellActivated;
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if(isTriggered == false && other.CompareTag("SoundWave"))
         {
-            // 检查碰撞对象的标签（可选，避免任何东西碰到都变色）
             SetSpriteAlpha(1.0f); 
             isTriggered = true;
-            Debug.Log("监测到碰撞");
-        }else if(isTriggered == true && other.CompareTag("SoundWave"))
+            Debug.Log(gameObject.name + " 已激活");
+
+            // 触发事件，通知管理器
+            OnBellActivated?.Invoke();
+        }
+        else if(isTriggered == true && other.CompareTag("SoundWave"))
         {
             PlayTriggerSound();
         }
@@ -25,10 +31,7 @@ public class BellTrigger : MonoBehaviour
     {
         if (audioSource != null)
         {
-            AudioClip collisionSound = audioSource.clip;
-            Debug.Log(gameObject.name + " 音频获取成功");
-            audioSource.PlayOneShot(collisionSound);
-            Debug.Log(gameObject.name + " 发出了声音");
+            audioSource.PlayOneShot(audioSource.clip);
         }
     }
 
@@ -40,7 +43,6 @@ public class BellTrigger : MonoBehaviour
 
     void SetSpriteAlpha(float alpha)
     {
-        // 不能直接修改 _spriteRenderer.color.a，必须先取出来赋值给临时变量
         Color tempColor = _spriteRenderer.color;
         tempColor.a = alpha;
         _spriteRenderer.color = tempColor;

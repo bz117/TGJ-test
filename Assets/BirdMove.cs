@@ -1,27 +1,56 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class BirdMove : MonoBehaviour
 {
-    // 用来存放已经触发状态的发送者
     private HashSet<BirdTrigger> activeSenders = new HashSet<BirdTrigger>();
-    public int targetCount = 4; // 目标数量
-    public bool isTouched = false;
+    public int targetCount = 4; 
     private int isBack = 0;
-    public Transform destination; // 在 Inspector 中拖入这个物体要去的“终点”
-    public float moveSpeed = 5f;  // 移动速度
+    public Transform destination; 
+    public float moveSpeed = 5f;  
+
+    [Header("视觉与碰撞设置")]
+    public SpriteRenderer targetSprite; // 最终要显示的正常图片
+    public SpriteRenderer whiteMask;   // 覆盖在上面的白色遮罩图片
+    public float fadeSpeed = 2f;       // 遮罩透明度变化速度
+    public float stayWhiteDuration = 2f; // 白色全显后的停留时间
+
+    [Header("玩家控制")]
+    public string playerMovementScriptName = "PlayerMovement"; 
+    private GameObject player;
+    private bool isPlayerLocked = false;
+    private bool effectStarted = false;
+
+    void Start()
+    {
+        player = GameObject.FindGameObjectWithTag("Player");
+        
+        // 初始状态设置
+        if (targetSprite != null)
+        {
+            // 目标图片初始完全透明
+            SetAlpha(targetSprite, 0);
+            // 初始关闭碰撞体积
+            Collider2D col = targetSprite.GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+        }
+
+        if (whiteMask != null)
+        {
+            // 白色遮罩初始完全透明，颜色确保是纯白
+            whiteMask.color = new Color(1, 1, 1, 0);
+        }
+    }
 
     public void RegisterSender(BirdTrigger sender)
     {
-        // 如果这个发送者还没记录过，就加进去
         if (!activeSenders.Contains(sender))
         {
             activeSenders.Add(sender);
-            Debug.Log($"已收集: {activeSenders.Count} / {targetCount}");
-
-            // 检查是否达到 4 个
             if (activeSenders.Count >= targetCount)
             {
+                SetPlayerControl(false); 
                 NotifyAllSenders();
             }
         }
@@ -29,42 +58,87 @@ public class BirdMove : MonoBehaviour
 
     void NotifyAllSenders()
     {
-        Debug.Log("全部就绪，正在发送回执消息...");
-        
-        // 遍历所有记录下的发送者，调用它们的方法
         foreach (BirdTrigger s in activeSenders)
         {
             s.OnFinalAction();
         }
-
-        // 如果需要重新开始，可以清空列表
-        // activeSenders.Clear();
     }
 
-    // 提供一个方法让别的脚本调用
-    public void UpdateStatus(string objectName, bool status)
-    {
-        isTouched = status;
-        Debug.Log(objectName + " 发来了状态：" + status);
-    }
-    // 这个方法会在子物体执行 SendMessage 时被触发
     public void OnChildArrived(GameObject child)
     {
-        Debug.Log($"父物体 {gameObject.name} 收到信号：子物体 {child.name} 已挂载。");
-        
-        // 示例：每当有一个子物体归位，就把父物体变大一点
         isBack += 1;
     }
+
     public void Update()
     {
-        if(isBack == 4)
+        if(isBack == targetCount)
         {
-            // 平滑移动向目标点
             transform.position = Vector3.MoveTowards(
                 transform.position, 
                 destination.position, 
                 moveSpeed * Time.deltaTime
             );
+
+            if (Vector3.Distance(transform.position, destination.position) < 0.01f && !effectStarted)
+            {
+                effectStarted = true;
+                StartCoroutine(MaskTransitionSequence());
+            }
         }
+    }
+
+    IEnumerator MaskTransitionSequence()
+    {
+        if (targetSprite == null || whiteMask == null) yield break;
+
+        // --- 1. 白色遮罩透明度由 0 变 1 ---
+        while (whiteMask.color.a < 1f)
+        {
+            SetAlpha(whiteMask, Mathf.MoveTowards(whiteMask.color.a, 1f, Time.deltaTime * fadeSpeed));
+            yield return null;
+        }
+
+        // --- 2. 在全白状态下停留 2 秒 ---
+        yield return new WaitForSeconds(stayWhiteDuration);
+
+        // --- 3. 瞬间显示下方目标图片，并开启碰撞 ---
+        SetAlpha(targetSprite, 1f);
+        Collider2D col = targetSprite.GetComponent<Collider2D>();
+        if (col != null) 
+        {
+            col.enabled = true;
+            col.isTrigger = false;
+        }
+
+        // --- 4. 白色遮罩透明度由 1 变 0 ---
+        while (whiteMask.color.a > 0f)
+        {
+            SetAlpha(whiteMask, Mathf.MoveTowards(whiteMask.color.a, 0f, Time.deltaTime * fadeSpeed));
+            yield return null;
+        }
+
+        // --- 5. 恢复玩家控制 ---
+        if (isPlayerLocked)
+        {
+            SetPlayerControl(true);
+        }
+    }
+
+    // 快捷修改透明度的辅助方法
+    void SetAlpha(SpriteRenderer renderer, float alpha)
+    {
+        Color c = renderer.color;
+        c.a = alpha;
+        renderer.color = c;
+    }
+
+    void SetPlayerControl(bool canMove)
+    {
+        if (player == null) return;
+        var moveScript = player.GetComponent(playerMovementScriptName) as MonoBehaviour;
+        if (moveScript != null) moveScript.enabled = canMove;
+        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+        if (rb != null && !canMove) rb.velocity = Vector2.zero;
+        isPlayerLocked = !canMove; 
     }
 }
