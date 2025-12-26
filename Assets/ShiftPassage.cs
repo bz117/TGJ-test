@@ -6,47 +6,45 @@ public class ShiftPassage : MonoBehaviour
     private AudioSource _audioSource;
     private BoxCollider2D _collider;
     private bool _hasPlayedSound = false;
+
     void Start() {
         _collider = GetComponent<BoxCollider2D>();
-            if (_collider == null)
-    {
-        // 使用 LogError 会在控制台显示红色感叹号，非常醒目
-        Debug.LogError($"[检测失败]：{gameObject.name} 物体上没有找到任何 Collider 组件！");
-    }
-    else
-    {
-        // 成功获取，打印出这个碰撞体的具体类型（是 BoxCollider 还是 MeshCollider 等）
-        Debug.Log($"[检测成功]：已关联到 {gameObject.name} 的 {_collider.GetType().Name}");
-    }
-
         _audioSource = GetComponent<AudioSource>();
         if (_audioSource == null) _audioSource = gameObject.AddComponent<AudioSource>();
     }
 
-void Update()
+    // --- 关键改动 1：使用碰撞持续检测 ---
+    void OnCollisionStay2D(Collision2D collision)
     {
-        // 检测是否按下了左 Shift 或 右 Shift
-        bool isShifting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-
-        if (isShifting)
+        // 只有当碰撞对象是 Player 时才继续
+        if (collision.gameObject.CompareTag("Player"))
         {
-            // --- 可以通过状态 ---
-            _collider.enabled = false; 
+            // 检测是否按下了 Shift
+            bool isShifting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-            // 播放声音（仅在按下瞬间播放一次）
-            if (!_hasPlayedSound && passSound != null)
+            if (isShifting)
             {
-                _audioSource.PlayOneShot(passSound);
-                _hasPlayedSound = true;
+                // 1. 播放声音（利用 bool 确保只响一次）
+                if (!_hasPlayedSound && passSound != null)
+                {
+                    Debug.Log($"[确认碰撞]：正在穿过 {gameObject.name}");
+                    _audioSource.PlayOneShot(passSound);
+                    _hasPlayedSound = true;
+                }
+
+                // 2. 变成触发器，让玩家穿过去
+                _collider.isTrigger = true;
             }
         }
-        else
+    }
+
+    // --- 关键改动 2：离开后重置状态 ---
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
         {
-            // --- 无法通过状态 ---
-            _collider.enabled = true;
-            
-            // 重置声音标记，以便下次按下时再次播放
-            _hasPlayedSound = false;
+            _collider.isTrigger = false; // 恢复物理碰撞实体
+            _hasPlayedSound = false;     // 重置声音标记
         }
     }
 }

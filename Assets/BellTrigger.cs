@@ -15,7 +15,7 @@ public class BellTrigger : MonoBehaviour
             SetSpriteAlpha(1.0f); 
             isTriggered = true;
             Debug.Log("监测到碰撞");
-        }else
+        }else if(isTriggered == true && other.CompareTag("SoundWave"))
         {
             PlayTriggerSound();
         }
