@@ -153,6 +153,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 975408684}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &269712958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 269712960}
+  - component: {fileID: 269712959}
+  m_Layer: 0
+  m_Name: Level_01ToCave
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &269712959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269712958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44d99263d9b9c41d5acf3e053fa093c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetSceneName: 
+  fadeOverlay: {fileID: 1265944002}
+  fadeDuration: 1
+  waitBeforeFadeIn: 2
+  playerControlScript: {fileID: 975408680}
+--- !u!4 &269712960
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 269712958}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1869, y: -1255.1812, z: -6.7904873}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &441752941
 GameObject:
   m_ObjectHideFlags: 0
@@ -627,14 +676,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f736c821f274eb4b0205ac1695702e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dashTrailObject: {fileID: 0}
   jumpDelay: 0.4
   canMove: 1
   canJump: 1
   canDoubleJump: 1
   canDash: 1
+  canSing: 1
   walkSpeed: 500
   dashSpeed: 1000
   jumpForce: 1200
+  dashDuration: 1
+  dashCooldown: 1
   groundCheck: {fileID: 241521138}
   checkRadius: 10
   groundLayer:
@@ -643,6 +696,7 @@ MonoBehaviour:
   jumpEffect: {fileID: 0}
   effectPoint: {fileID: 0}
   hangTimeThreshold: 0.24
+  trailExtraTime: 0.1
 --- !u!50 &975408681
 Rigidbody2D:
   serializedVersion: 4
@@ -1566,6 +1620,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1477815006}
+  - {fileID: 269712960}
   - {fileID: 975408684}
   - {fileID: 2095094122}
   - {fileID: 441752943}
