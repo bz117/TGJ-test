@@ -7,6 +7,7 @@ public class CameraZone : MonoBehaviour
     public Vector3 zoneOffset = new Vector3(0, 2, -10); // 该区域特定的偏移
 
     private CameraFollow camFollow;
+    private bool isActivated = false;
 
     void Start()
     {
@@ -15,18 +16,20 @@ public class CameraZone : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !isActivated)
         {
-            // 进入时，传给摄像机这个区域专属的数值
+            isActivated = true;
+            Debug.Log("--- 激活区域 ---");
             camFollow.UpdateCameraSettings(zoneCameraSize, zoneOffset);
         }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && isActivated)
         {
-            // 离开时，恢复默认
+            isActivated = false;
+            Debug.Log("--- 离开区域 ---");
             camFollow.ResetToNormal();
         }
     }

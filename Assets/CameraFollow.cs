@@ -26,10 +26,13 @@ public class CameraFollow : MonoBehaviour
     void LateUpdate()
     {
         if (target == null) return;
+        // 使用 Lerp 时，建议对 Time.deltaTime * smoothSpeed 进行限制，防止卡顿瞬间数值过大
+        float t = Mathf.Clamp01(Time.deltaTime * smoothSpeed);
 
-        cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize, Time.deltaTime * smoothSpeed);
+        cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, targetSize, t);
+        
         Vector3 desiredPosition = target.position + targetOffset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * smoothSpeed);
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, t);
     }
 
     // 修改：现在可以接收具体的 size 和 offset 参数
