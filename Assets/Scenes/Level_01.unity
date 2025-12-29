@@ -1993,7 +1993,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ebddcd6c3ce734b25840dc925e7e6304, type: 2}
   m_sharedMaterial: {fileID: -1732364722644948922, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2057,7 +2057,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &242513427
@@ -2579,7 +2579,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ebddcd6c3ce734b25840dc925e7e6304, type: 2}
   m_sharedMaterial: {fileID: -1732364722644948922, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2643,7 +2643,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &274534734
@@ -4404,7 +4404,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &507418040
 Transform:
   m_ObjectHideFlags: 0
@@ -7780,7 +7780,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ebddcd6c3ce734b25840dc925e7e6304, type: 2}
   m_sharedMaterial: {fileID: -1732364722644948922, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -7844,7 +7844,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1086185326
@@ -9041,7 +9041,7 @@ Transform:
   m_GameObject: {fileID: 1192746552}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -606, y: 1677, z: 0}
+  m_LocalPosition: {x: 2160, y: -2030, z: 0}
   m_LocalScale: {x: 20, y: 20, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -10796,7 +10796,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ebddcd6c3ce734b25840dc925e7e6304, type: 2}
   m_sharedMaterial: {fileID: -1732364722644948922, guid: 5b1cf8eced4624605a9b08ef4a2a4779, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -10860,7 +10860,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1603525275
@@ -15062,7 +15062,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &2017579822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15076,8 +15076,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bounceForce: 1500
-  recoverTime: 5
   usedColor: {r: 1, g: 0, b: 0, a: 1}
+  deactivatedSize: {x: 3.46, y: 2}
 --- !u!61 &2017579823
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -15184,7 +15184,7 @@ Transform:
   m_GameObject: {fileID: 2017579821}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2267, y: -1979, z: 0}
+  m_LocalPosition: {x: 2571, y: -2013, z: 0}
   m_LocalScale: {x: 80, y: 80, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

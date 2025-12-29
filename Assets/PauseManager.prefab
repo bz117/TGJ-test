@@ -48,5 +48,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1dc3b2867c8f44caab4d902236a194ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pauseMenuUI: {fileID: 0}
-  isPaused: 0
+  pauseMenuUI: {fileID: 8813838135362943304, guid: 8194edf8d4589441181a88198e43688b, type: 3}
+  settingsUI: {fileID: 8813838135362943304, guid: 8194edf8d4589441181a88198e43688b, type: 3}

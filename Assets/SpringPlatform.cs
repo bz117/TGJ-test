@@ -1,38 +1,40 @@
 using UnityEngine;
-using System.Collections;
 
 public class SpringPlatform : MonoBehaviour
 {
     [Header("设置参数")]
-    public float bounceForce = 2000f;      // 弹跳力度
-    public float recoverTime = 5f;       // 恢复时间
-    public Color usedColor = Color.red;  // 变色颜色
+    public float bounceForce = 20f;
+    public Color usedColor = Color.red;
+    
+    [Header("碰撞体缩放设置")]
+    public Vector2 deactivatedSize = new Vector2(1f, 0.5f);
 
-    private Color originalColor;         // 记录初始颜色
-    private bool isReady = true;         // 是否处于可弹跳状态
+    private bool isReady = true;
+    
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D boxCollider;
+    private Vector2 originalSize;
+    private Vector2 originalOffset;
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        originalColor = spriteRenderer.color;
-        Debug.Log("脚本运行成功");
+        boxCollider = GetComponent<BoxCollider2D>();
+        
+        // 记录原始值，用于计算偏移量
+        originalSize = boxCollider.size;
+        originalOffset = boxCollider.offset;
     }
 
-    // 2D 碰撞检测
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log("检测到碰撞");
-        // 1. 判断是否处于激活状态
-        // 2. 判断碰撞的是否是玩家（假设玩家有 "Player" 标签）
+        // 如果已经触发过，则不再执行弹起逻辑
         if (isReady && collision.gameObject.CompareTag("Player"))
         {
-            Debug.Log("检测到玩家碰撞");
-            // 3. 判断玩家是否是从上方跳下来的
-            // 获取碰撞接触点，判断法线方向（向上）
             foreach (ContactPoint2D contact in collision.contacts)
             {
-                if (contact.normal.y < -0.5f) // 法线向下说明物体被从上方踩踏
+                // 检测是否是从上方踩踏
+                if (contact.normal.y < -0.5f) 
                 {
                     ActivateSpring(collision.gameObject);
                     break;
@@ -43,30 +45,30 @@ public class SpringPlatform : MonoBehaviour
 
     private void ActivateSpring(GameObject player)
     {
-        isReady = false; // 禁用弹力
-        Debug.Log("禁用弹力成功");
+        isReady = false; // 标记为已触发，后续不再生效
 
-        // 让玩家弹起
+        // 1. 给玩家向上的力
         Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
-            // 重置 Y 轴速度，确保弹跳高度一致
+            // 使用 velocity 直接赋值可以确保弹跳高度一致
             rb.velocity = new Vector2(rb.velocity.x, bounceForce);
         }
 
-        // 改变物体颜色
+        // 2. 视觉反馈：改变颜色
         spriteRenderer.color = usedColor;
 
-        // 开启协程，5秒后恢复
-        StartCoroutine(RecoverRoutine());
+        // 3. 永久改变碰撞体大小
+        UpdateCollider(deactivatedSize);
     }
 
-    IEnumerator RecoverRoutine()
+    private void UpdateCollider(Vector2 newSize)
     {
-        yield return new WaitForSeconds(recoverTime);
+        if (boxCollider == null) return;
         
-        // 恢复初始状态
-        spriteRenderer.color = originalColor;
-        isReady = true;
+        // 计算高度差，使碰撞体底部对齐（防止平台悬空）
+        float heightDifference = (originalSize.y - newSize.y) / 2f;
+        boxCollider.size = newSize;
+        boxCollider.offset = new Vector2(originalOffset.x, originalOffset.y - heightDifference);
     }
 }
