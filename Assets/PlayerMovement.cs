@@ -40,7 +40,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Animator anim;
     private int jumpsLeft;
-    private bool isGrounded;
+    public bool isGrounded;
     private float horizontalInput;
     private bool isDashing; 
     private bool isSinging; 
@@ -61,20 +61,71 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        CheckGround();
-        
-        // 处理冷却计时
+        CheckGround(); // 必须首先更新地面状态
         HandleDashTimers();
+
+        // 1. 修改：不仅要检测 isGrounded，还要确保垂直速度接近0（防止跳跃瞬间判定还在地面）
+        bool strictlyOnGround = isGrounded && Mathf.Abs(rb.velocity.y) < 0.1f;
+
+        // 2. 强制拦截：如果不在地面，立刻强制结束唱歌状态
+        if (!strictlyOnGround)
+        {
+            isSinging = false;
+        }
+
+        // 3. 处理唱歌输入（只有在严格的地面判定下才有效）
+        HandleSingInput(strictlyOnGround); 
 
         if (!isSinging)
         {
             if (canMove) HandleMovementInput();
             if (canJump) HandleJumpInput();
         }
+        else 
+        {
+            // 唱歌时强制清空输入，防止带惯性滑行
+            horizontalInput = 0;
+            if (isDashing) StopDash(); 
+        }
         
-        HandleSingInput(); 
         UpdateAnimation(); 
         Flip();
+    }
+
+    void HandleSingInput(bool strictlyOnGround)
+    {
+        // 如果功能关闭或不在地面，直接跳出
+        if (!canSing || !strictlyOnGround) 
+        {
+            isSinging = false;
+            return;
+        }
+
+        if (Input.GetKey(KeyCode.O))
+        {
+            isSinging = true;
+        }
+        else
+        {
+            isSinging = false;
+        }
+    }
+    void HandleMovementInput()
+    {
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+
+        // 增加 !isSinging 判定，确保唱歌时按 Shift 无效
+        if (canDash && !isDashCooldown && !isDashing && !isSinging &&
+           (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && 
+           horizontalInput != 0)
+        {
+            StartDash();
+        }
+
+        if (isDashing && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
+        {
+            StopDash();
+        }
     }
 
     void FixedUpdate()
@@ -122,24 +173,6 @@ public class PlayerController : MonoBehaviour
             if (cooldownTimer <= 0) isDashCooldown = false;
         }
     }
-    void HandleMovementInput()
-    {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
-
-        // 冲刺触发条件：开启功能 + 没在冷却 + 没在冲刺中 + 按下Shift + 有移动输入
-        if (canDash && !isDashCooldown && !isDashing && 
-           (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && 
-           horizontalInput != 0)
-        {
-            StartDash();
-        }
-
-        // 如果冲刺期间松开了按键，也可以选择提前结束冲刺（如果你想强制冲满1秒，可以删掉下面这段）
-        if (isDashing && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
-        {
-            StopDash();
-        }
-    }
 
     void StartDash()
     {
@@ -154,24 +187,6 @@ public class PlayerController : MonoBehaviour
         cooldownTimer = dashCooldown;
     }
 
-    void HandleSingInput()
-    {
-        if (!canSing || !isGrounded) 
-        {
-            isSinging = false;
-            return;
-        }
-
-        if (Input.GetKey(KeyCode.O))
-        {
-            isSinging = true;
-            horizontalInput = 0; 
-        }
-        else
-        {
-            isSinging = false;
-        }
-    }
 
     void ApplyMovement()
     {
