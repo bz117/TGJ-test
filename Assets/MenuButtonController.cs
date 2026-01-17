@@ -8,7 +8,7 @@ public class MenuButtonController : MonoBehaviour
         // 直接通过单例调用函数
         if (SceneLoader.Instance != null)
         {
-            SceneLoader.Instance.OpenSettings();
+            SceneLoader.Instance.OpenSettingsFromMenu();
         }
     }
 }

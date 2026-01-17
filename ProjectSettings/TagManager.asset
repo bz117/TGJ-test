@@ -12,7 +12,7 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - player
+  - Player
   - Water
   - UI
   - obstacle
@@ -54,9 +54,12 @@ TagManager:
   - name: floor
     uniqueID: 139032919
     locked: 0
-  - name: player
+  - name: Player
     uniqueID: 1966570883
     locked: 0
   - name: hand
     uniqueID: 2598409897
+    locked: 0
+  - name: LightMask
+    uniqueID: 3035929785
     locked: 0

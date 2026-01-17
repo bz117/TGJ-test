@@ -4,12 +4,16 @@ public class SpringPlatform : MonoBehaviour
 {
     [Header("设置参数")]
     public float bounceForce = 20f;
-    public Color usedColor = Color.red;
+    
+    [Header("动画设置")]
+    public Animator animator; // 引用动画组件
+    public string animationTriggerName = "Activate"; // 动画触发器名称
     
     [Header("碰撞体缩放设置")]
     public Vector2 deactivatedSize = new Vector2(1f, 0.5f);
 
     private bool isReady = true;
+    private bool animationPlayed = false;
     
     private SpriteRenderer spriteRenderer;
     private BoxCollider2D boxCollider;
@@ -24,6 +28,12 @@ public class SpringPlatform : MonoBehaviour
         // 记录原始值，用于计算偏移量
         originalSize = boxCollider.size;
         originalOffset = boxCollider.offset;
+        
+        // 如果没有手动指定Animator，则尝试获取
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -55,10 +65,45 @@ public class SpringPlatform : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, bounceForce);
         }
 
-        // 2. 视觉反馈：改变颜色
-        spriteRenderer.color = usedColor;
+        // 2. 播放动画
+        PlayAnimation();
+    }
 
-        // 3. 永久改变碰撞体大小
+    private void PlayAnimation()
+    {
+        if (animator != null && !animationPlayed)
+        {
+            // 触发动画
+            animator.SetTrigger(animationTriggerName);
+            
+            // 标记动画已播放，确保只播放一次
+            animationPlayed = true;
+            
+            // 等待动画播放完成后改变碰撞体大小
+            StartCoroutine(WaitForAnimationToEnd());
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForAnimationToEnd()
+    {
+        // 等待动画播放完成（这里假设动画播放时间）
+        if (animator != null)
+        {
+            // 获取动画剪辑的长度
+            RuntimeAnimatorController ac = animator.runtimeAnimatorController;
+            if (ac != null && ac.animationClips.Length > 0)
+            {
+                // 等待动画剪辑的长度
+                yield return new WaitForSeconds(ac.animationClips[0].length);
+            }
+            else
+            {
+                // 如果无法获取动画长度，使用默认等待时间
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+        
+        // 动画播放完成后改变碰撞体大小
         UpdateCollider(deactivatedSize);
     }
 
@@ -72,3 +117,6 @@ public class SpringPlatform : MonoBehaviour
         boxCollider.offset = new Vector2(originalOffset.x, originalOffset.y - heightDifference);
     }
 }
+
+
+

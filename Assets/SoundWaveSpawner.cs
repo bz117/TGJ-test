@@ -20,7 +20,7 @@ public class SoundWaveSpawner : MonoBehaviour
         bool isGrounded = playerCtrl != null && playerCtrl.isGrounded;
 
         // 1. 刚刚按下：只有在地面上才能生成圆
-        if (Input.GetKeyDown(spawnKey) && isGrounded)
+        if (playerCtrl.canSing && Input.GetKeyDown(spawnKey) && isGrounded)
         {
             // 注意：这里的偏移值 (0, 60, 0) 很大，请确保这是你需要的逻辑高度
             GameObject go = Instantiate(soundWavePrefab, 

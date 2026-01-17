@@ -7,7 +7,8 @@ public class PlayerController : MonoBehaviour
     public GameObject dashTrailObject; 
 
     [Header("起跳设置")]
-    public float jumpDelay = 0.15f; 
+    private bool hasPerformedFirstJump = false;
+    public float jumpDelay = 0.0f; 
     private bool isJumping;        
 
     [Header("功能开关")]
@@ -18,9 +19,9 @@ public class PlayerController : MonoBehaviour
     public bool canSing = true; 
 
     [Header("物理参数")]
-    public float walkSpeed = 8f;
-    public float dashSpeed = 14f;
-    public float jumpForce = 12f;
+    public float walkSpeed = 5f; // 修正：合理行走速度
+    public float dashSpeed = 12f; // 修正：合理冲刺速度
+    public float jumpForce = 8f; // 修正：合理跳跃力度
 
     [Header("冲刺冷却设置")]
     public float dashDuration = 1f;    // 冲刺持续时间
@@ -31,7 +32,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("检测设置")]
     public Transform groundCheck;
-    public float checkRadius = 0.2f;
+    public float checkRadius = 10;
     public LayerMask groundLayer;
 
     [Header("特效设置")]
@@ -46,17 +47,66 @@ public class PlayerController : MonoBehaviour
     private bool isSinging; 
 
     [Header("动画平滑设置")]
-    public float hangTimeThreshold = 0.5f; 
+    public float hangTimeThreshold = 0.24f; 
 
-    // 1. 在 Header 增加一个变量
     [Header("视觉修正")]
     public float trailExtraTime = 0.1f; // 拖尾多留存的时间
     private float trailTimer;
 
+    [Header("Ground Check")]
+    public float groundCheckDistance = 0.15f;
+    public float groundCheckHorizontalOffset = 0.2f; // 左右偏移量
+
+    void CheckGround()
+    {
+        if (groundCheck == null)
+        {
+            Debug.LogWarning("groundCheck 未赋值！", this);
+            isGrounded = false;
+            return;
+        }
+
+        Vector2 originCenter = groundCheck.position;
+        Vector2 originLeft = originCenter + Vector2.left * groundCheckHorizontalOffset;
+        Vector2 originRight = originCenter + Vector2.right * groundCheckHorizontalOffset;
+        Vector2 direction = Vector2.down;
+        float distance = groundCheckDistance;
+
+        bool hitLeft = Physics2D.Raycast(originLeft, direction, distance, groundLayer);
+        bool hitCenter = Physics2D.Raycast(originCenter, direction, distance, groundLayer);
+        bool hitRight = Physics2D.Raycast(originRight, direction, distance, groundLayer);
+
+        // 调试可视化
+        Debug.DrawRay(originLeft, direction * distance, hitLeft ? Color.green : Color.red);
+        Debug.DrawRay(originCenter, direction * distance, hitCenter ? Color.green : Color.red);
+        Debug.DrawRay(originRight, direction * distance, hitRight ? Color.green : Color.red);
+
+        isGrounded = hitLeft || hitCenter || hitRight;
+
+        bool strictlyOnGround = isGrounded && Mathf.Abs(rb.velocity.y) < 0.1f;
+        if (strictlyOnGround)
+        {
+            jumpsLeft = canDoubleJump ? 2 : 1;
+            hasPerformedFirstJump = false;
+        }
+    }
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+
+        // 验证组件是否获取成功
+        if (rb == null)
+        {
+            Debug.LogError("角色缺少Rigidbody2D组件！", this);
+        }
+        if (anim == null)
+        {
+            Debug.LogWarning("角色缺少Animator组件！", this);
+        }
+
+        // 初始化跳跃次数
+        jumpsLeft = canDoubleJump ? 2 : 1;
     }
 
     void Update()
@@ -64,7 +114,7 @@ public class PlayerController : MonoBehaviour
         CheckGround(); // 必须首先更新地面状态
         HandleDashTimers();
 
-        // 1. 修改：不仅要检测 isGrounded，还要确保垂直速度接近0（防止跳跃瞬间判定还在地面）
+        // 1. 修改：不仅要检测 isGrounded，还要确保垂直速度接近0
         bool strictlyOnGround = isGrounded && Mathf.Abs(rb.velocity.y) < 0.1f;
 
         // 2. 强制拦截：如果不在地面，立刻强制结束唱歌状态
@@ -75,6 +125,9 @@ public class PlayerController : MonoBehaviour
 
         // 3. 处理唱歌输入（只有在严格的地面判定下才有效）
         HandleSingInput(strictlyOnGround); 
+
+        // 监控关键状态，方便排查问题
+        //Debug.Log($"isSinging: {isSinging}, canMove: {canMove}, horizontalInput: {horizontalInput}", this);
 
         if (!isSinging)
         {
@@ -94,22 +147,17 @@ public class PlayerController : MonoBehaviour
 
     void HandleSingInput(bool strictlyOnGround)
     {
-        // 如果功能关闭或不在地面，直接跳出
+        // 如果功能关闭或不在地面，强制重置唱歌状态
         if (!canSing || !strictlyOnGround) 
         {
             isSinging = false;
             return;
         }
 
-        if (Input.GetKey(KeyCode.O))
-        {
-            isSinging = true;
-        }
-        else
-        {
-            isSinging = false;
-        }
+        // 仅当主动按下O键时开启，松开立即关闭
+        isSinging = Input.GetKey(KeyCode.O);
     }
+
     void HandleMovementInput()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
@@ -130,26 +178,16 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (canMove && !isSinging) 
+        if (canMove && !isSinging && rb != null) 
         {
             ApplyMovement();
         }
-        else 
+        else if (rb != null)
         {
             rb.velocity = new Vector2(0, rb.velocity.y);
         }
     }
 
-    void CheckGround()
-    {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
-        if (isGrounded && rb.velocity.y <= 0.1f)
-        {
-            jumpsLeft = canDoubleJump ? 2 : 1;
-        }
-    }
-
-    // 2. 修改 HandleDashTimers 逻辑
     void HandleDashTimers()
     {
         if (isDashing)
@@ -176,60 +214,67 @@ public class PlayerController : MonoBehaviour
 
     void StartDash()
     {
+        dashTrailObject?.SetActive(true);
         isDashing = true;
         dashTimer = dashDuration;
     }
 
     void StopDash()
     {
+        dashTrailObject?.SetActive(false);
         isDashing = false;
         isDashCooldown = true;
         cooldownTimer = dashCooldown;
     }
 
-
     void ApplyMovement()
     {
         float targetSpeed = isDashing ? dashSpeed : walkSpeed;
+        // 赋值水平速度，保留垂直速度
         rb.velocity = new Vector2(horizontalInput * targetSpeed, rb.velocity.y);
     }
 
-    // ... (HandleJumpInput, JumpRoutine, PerformJumpPhysics, Flip, UpdateAnimation 保持不变)
-    
     void HandleJumpInput()
     {
         if (Input.GetButtonDown("Jump") && !isJumping && !isSinging)
         {
-            if (isGrounded || jumpsLeft > 0)
+            // 一段跳：必须严格在地面且尚未跳过
+            if (isGrounded && Mathf.Abs(rb.velocity.y) < 0.1f && !hasPerformedFirstJump)
             {
-                StartCoroutine(JumpRoutine());
+                StartCoroutine(JumpRoutine(firstJump: true));
+            }
+            // 二段跳：必须已跳过一次，且还有剩余跳次数，且不在地面
+            else if (canDoubleJump && !isGrounded && hasPerformedFirstJump && jumpsLeft > 0)
+            {
+                StartCoroutine(JumpRoutine(firstJump: false));
             }
         }
     }
 
-    IEnumerator JumpRoutine()
+    IEnumerator JumpRoutine(bool firstJump)
     {
         isJumping = true;
 
-        if (isGrounded)
+        if (firstJump)
         {
-            anim.SetTrigger("jump"); 
+            anim?.SetTrigger("jump");
             canMove = false;
-            yield return new WaitForSeconds(jumpDelay); 
-            PerformJumpPhysics(); 
+            yield return new WaitForSeconds(jumpDelay);
+            PerformJumpPhysics();
             canMove = true;
+            hasPerformedFirstJump = true; // 标记已执行一段跳
+            jumpsLeft--; // 消耗一次跳跃机会（从2→1）
         }
         else
         {
-            anim.SetTrigger("doubleJump");
+            anim?.SetTrigger("doubleJump");
             rb.velocity = new Vector2(rb.velocity.x, 0);
             float originalGravity = rb.gravityScale;
-            rb.gravityScale = 0; 
-
-            yield return new WaitForSeconds(0.3f); 
-
-            rb.gravityScale = originalGravity; 
+            rb.gravityScale = 0;
+            yield return new WaitForSeconds(0.3f);
+            rb.gravityScale = originalGravity;
             PerformJumpPhysics();
+            jumpsLeft--; // 二段跳消耗最后一次（1→0）
         }
 
         isJumping = false;
@@ -237,9 +282,9 @@ public class PlayerController : MonoBehaviour
 
     void PerformJumpPhysics()
     {
+        if (rb == null) return;
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-        jumpsLeft--;
-        if (!isGrounded && jumpEffect != null)
+        if (!isGrounded && jumpEffect != null && effectPoint != null)
         {
             Instantiate(jumpEffect, effectPoint.position, Quaternion.identity);
         }
@@ -260,11 +305,11 @@ public class PlayerController : MonoBehaviour
         anim.SetFloat("speed", moveSpeed);
 
         anim.SetBool("isGrounded", isGrounded);
-        anim.SetFloat("yVelocity", rb.velocity.y);
+        anim.SetFloat("yVelocity", rb != null ? rb.velocity.y : 0);
         anim.SetBool("isDashing", isDashing); 
         anim.SetBool("isSinging", isSinging); 
 
-        bool isHanging = !isGrounded && rb.velocity.y > 0 && rb.velocity.y < hangTimeThreshold;
+        bool isHanging = !isGrounded && (rb != null ? rb.velocity.y > 0 && rb.velocity.y < hangTimeThreshold : false);
         anim.SetBool("isHanging", isHanging);
         
         // 修改：只要还在冲刺，或者冲刺刚结束的 0.1s 内，都显示拖尾

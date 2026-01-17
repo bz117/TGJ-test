@@ -6,7 +6,7 @@ public class TriggerMove : MonoBehaviour
     public float height = 600;
     
     // 控制开关：默认为 false，触发后变为 true
-    private bool isMoving = false; 
+    private bool isMoving = true; 
 
     private Rigidbody2D rb;
     private float startY;

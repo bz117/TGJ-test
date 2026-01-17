@@ -1,98 +1,119 @@
 using UnityEngine;
 
+/// <summary>
+/// 挂在每只小鸟上的触发器脚本。
+/// 负责：1. 检测声波；2. 激活自身；3. 移动到目标点；4. 到达后通知协调者。
+/// </summary>
 public class BirdTrigger : MonoBehaviour
 {
-    public Transform birds_flock;
-    private bool isTriggered = false;
+    [Header("激活延迟")]
+    public float delayAfterActivation = 0.5f; // 在 Inspector 中可调整的延迟时间（秒）
+    private float _activationTimer = 0f;
+    private bool _isDelaying = false; // 新增状态：是否处于延迟中
+    [Header("移动设置")]
+    public Transform destination;      // 所有小鸟共同的目标点
+    public float moveSpeed = 5f;
+    public Transform birdsFlock;       // 鸟群父物体（可选，用于归位）
+
+    [Header("通信设置")]
+    public BirdCoordinator coordinator; // 拖入挂有 BirdCoordinator 的 GameObject（通常是 birdsFlock）
+
+    [Header("视觉/动画")]
+    public Animator animator;
+    public string animationTriggerName = "BirdActivate";
+    [Range(0, 1)] public float targetAlpha = 1f;
+
     private SpriteRenderer _spriteRenderer;
-
-    public BirdMove receiver; 
-    public Transform destination; 
-    public float moveSpeed = 5f;  
-    
-    private bool shouldMove = false; 
-
-    // --- 新增变量：用于控制玩家 ---
-    private GameObject player;
+    private bool _isActivated = false;
+    private bool _hasArrived = false;
 
     void Start()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
-        // 自动寻找带有 "Player" 标签的物体
-        player = GameObject.FindGameObjectWithTag("Player");
+        SetSpriteAlpha(0.4f); // 初始隐藏
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if(isTriggered == false && other.CompareTag("SoundWave"))
+        if (!_isActivated && other.CompareTag("SoundWave"))
         {
-            SetSpriteAlpha(1.0f); 
-            if (receiver != null) {
-                receiver.RegisterSender(this); 
-            }
-            isTriggered = true;
-        }
-    }
-    public void OnFinalAction()
-    {
-        shouldMove = true; 
-        // 这里不需要写 SetPlayerControl，父物体在 NotifyAllSenders 时已经锁过了
-        Debug.Log(gameObject.name + " 开始向目标移动！");
-    }
-
-    void Update() {
-        if (shouldMove && destination != null) {
-            transform.position = Vector3.MoveTowards(
-                transform.position, 
-                destination.position, 
-                moveSpeed * Time.deltaTime
-            );
-
-            if (Vector3.Distance(transform.position, destination.position) < 0.01f) 
-            {
-                shouldMove = false;
-                transform.SetParent(birds_flock);
-
-                // 物理恢复逻辑... (保持你之前的代码)
-                Rigidbody2D rb = GetComponent<Rigidbody2D>();
-                if (rb != null) { rb.simulated = true; rb.bodyType = RigidbodyType2D.Kinematic; }
-                
-                // 核心修改：通知父物体该鸟已到达
-                if (birds_flock != null) {
-                    birds_flock.SendMessage("OnBirdArrived", SendMessageOptions.DontRequireReceiver);
-                }
-                
-                // 这里的 SendMessage("OnChildArrived") 如果你父物体没用到可以保留或删除
-                if (transform.parent != null) {
-                    transform.parent.SendMessage("OnChildArrived", gameObject, SendMessageOptions.DontRequireReceiver);
-                }
-            }
+            Activate();
         }
     }
 
-    // --- 新增方法：控制玩家移动开关 ---
-    void SetPlayerMovement(bool canMove)
+    private void Activate()
     {
-        if (player != null)
-        {
-            // 方法 A：禁用整个玩家控制脚本（假设脚本叫 PlayerMovement）
-            // 注意：请将 "PlayerMovement" 替换为你实际的玩家控制脚本名称
-            var moveScript = player.GetComponent("PlayerMovement") as MonoBehaviour;
-            if (moveScript != null) moveScript.enabled = canMove;
+        _isActivated = true;
+        _isDelaying = true; // 👈 开始延迟
+        _activationTimer = 0f; // 重置计时器
 
-            // 方法 B：如果是通过 Rigidbody 控制，可以强制清零速度
-            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-            if (!canMove && playerRb != null)
+        SetSpriteAlpha(targetAlpha);
+        PlayAnimation();
+
+        // 可选：如果小鸟有 Rigidbody2D，可以在此冻结或设置为 Kinematic
+        // Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        // if (rb != null) rb.bodyType = RigidbodyBodyType.Kinematic;
+    }
+    void Update()
+    {
+        if (!_isActivated) return;
+
+        // 🕒 状态1：正在延迟
+        if (_isDelaying)
+        {
+            _activationTimer += Time.deltaTime;
+            if (_activationTimer >= delayAfterActivation)
             {
-                playerRb.velocity = Vector2.zero;
+                _isDelaying = false; // 延迟结束
+                // 可选：播放起飞音效或第二段动画
             }
+        }
+        // 🚀 状态2：延迟结束，开始移动
+        else if (!_hasArrived && destination != null)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, destination.position, moveSpeed * Time.deltaTime);
+
+            if (Vector3.Distance(transform.position, destination.position) < 0.01f)
+            {
+                _hasArrived = true;
+                OnArrival();
+            }
+        }
+    }
+    private void OnArrival()
+    {
+        // 归位到鸟群（可选）
+        if (birdsFlock != null)
+        {
+            transform.SetParent(birdsFlock);
+        }
+
+        // 👇 核心：通知协调者“我到了！”
+        if (coordinator != null)
+        {
+            coordinator.OnBirdArrived(gameObject);
+        }
+        else
+        {
+            Debug.LogError($"[BirdTrigger] {name} 的 Coordinator 未指定！");
+        }
+    }
+
+    void PlayAnimation()
+    {
+        if (animator != null && !string.IsNullOrEmpty(animationTriggerName))
+        {
+            animator.SetTrigger(animationTriggerName);
         }
     }
 
     void SetSpriteAlpha(float alpha)
     {
-        Color tempColor = _spriteRenderer.color;
-        tempColor.a = alpha;
-        _spriteRenderer.color = tempColor;
+        if (_spriteRenderer != null)
+        {
+            Color c = _spriteRenderer.color;
+            c.a = alpha;
+            _spriteRenderer.color = c;
+        }
     }
 }

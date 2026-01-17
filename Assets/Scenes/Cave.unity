@@ -693,8 +693,15 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 192
+  wallCheck: {fileID: 0}
+  wallCheckRadius: 0.2
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  groundedStabilizeTime: 0.03
   jumpEffect: {fileID: 0}
   effectPoint: {fileID: 0}
+  isGrounded: 0
   hangTimeThreshold: 0.24
   trailExtraTime: 0.1
 --- !u!50 &975408681
@@ -820,7 +827,7 @@ Transform:
   m_GameObject: {fileID: 975408676}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5552, y: -1352, z: 0}
+  m_LocalPosition: {x: 5429, y: -1355, z: 0}
   m_LocalScale: {x: 20, y: 20, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -904,7 +911,7 @@ Transform:
   m_GameObject: {fileID: 1159891726}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5260.007, y: -876.7353, z: 0}
+  m_LocalPosition: {x: 5832, y: -901, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1342,7 +1349,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.023587942, g: 1, b: 0, a: 1}
+  m_Color: {r: 0.90943396, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

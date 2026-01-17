@@ -4,6 +4,8 @@ using UnityEngine.Rendering.Universal; // 必须引用 URP
 public class LightTrigger : MonoBehaviour
 {
     public Light2D bulbLight;       // 拖入你的 Sprite Light 2D
+    public SpriteRenderer spriteRenderer;
+    public Sprite LightOn;  // 灯亮后的图片
     public float targetIntensity = 1.2f; // 灯亮后的最终强度
     public float speed = 2.0f;      // 亮起的速度
 
@@ -15,6 +17,7 @@ public class LightTrigger : MonoBehaviour
         {
             Debug.Log("检测到碰撞");
             isTurningOn = true;
+            spriteRenderer.sprite = LightOn;
             // 如果你想做一次性的触发，可以在这里禁用这个 Collider
             GetComponent<Collider2D>().enabled = false;
         }

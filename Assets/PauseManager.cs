@@ -6,11 +6,14 @@ public class PauseManager : MonoBehaviour
     public static PauseManager Instance;
 
     [Header("UI 设置")]
+    public GameObject mainMenuPanel; 
     public GameObject pauseMenuUI; 
     public GameObject settingsUI; // 建议把设置界面也引用进来
 
     private void Awake()
     {
+        if (pauseMenuUI != null) pauseMenuUI.SetActive(false);
+        if (settingsUI != null) settingsUI.SetActive(false);
         if (Instance == null)
         {
             Instance = this;
@@ -44,6 +47,9 @@ public class PauseManager : MonoBehaviour
                     Pause();
                 }
             }
+        }else
+        {
+            mainMenuPanel.SetActive(true);
         }
     }
 

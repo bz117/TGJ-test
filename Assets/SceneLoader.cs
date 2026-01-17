@@ -1,22 +1,31 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 public class SceneLoader : MonoBehaviour
 {
-    public static SceneLoader Instance;
+    // 单例实例（全局唯一访问点）
+    public static SceneLoader Instance { get; private set; }
 
-    [Header("UI Canvas 引用")]
-    public GameObject mainMenuPanel;   // 新增：拖入主菜单的 Panel 或 Canvas
-    public Canvas pauseCanvas;    // 拖入你的 Pause Canvas
-    public Canvas settingsCanvas; // 拖入你的 Settings Canvas
+    [Header("UI 引用（必须赋值）")]
+    public CanvasGroup fadeCanvasGroup; // 淡入淡出的画布组
+    public Canvas pauseCanvas; // 暂停面板
+    public GameObject mainMenuPanel; // 主菜单面板
+    public GameObject settingsPanel; // 设置面板
 
-    private bool isPaused = false;
+    [Header("渐变设置")]
+    public float fadeDuration = 1f; // 渐变时长（秒）
+
+    // 记录设置面板的打开来源
+    private enum SettingsSource { None, Menu, Pause }
+    private SettingsSource currentSettingsSource = SettingsSource.None;
+
+    // 判断是否正在渐变
+    private bool isFading => fadeCanvasGroup != null && fadeCanvasGroup.alpha > 0f && fadeCanvasGroup.alpha < 1f;
 
     private void Awake()
     {
+        // 单例初始化：确保全局唯一，切换场景不销毁
         if (Instance == null)
         {
             Instance = this;
@@ -25,119 +34,225 @@ public class SceneLoader : MonoBehaviour
         else
         {
             Destroy(gameObject);
-            return; // 结束执行，防止逻辑冲突
+            return;
         }
 
-        // 每一帧或每次场景加载后检查是否有重复的 EventSystem
-        SceneManager.sceneLoaded += (scene, mode) => {
-            EventSystem[] eventSystems = FindObjectsOfType<EventSystem>();
-            if (eventSystems.Length > 1)
-            {
-                foreach (var es in eventSystems)
-                {
-                    // 如果这个 EventSystem 不是我带过来的那个，就删掉它
-                    if (es.transform.parent != transform) 
-                    {
-                        Destroy(es.gameObject);
-                    }
-                }
-            }
-        };
-    }
-    void Update()
-    {
-        // 排除主菜单场景（假设主菜单名为 "Menu"）
-        if (SceneManager.GetActiveScene().name != "Menu")
+        // 清理多余的EventSystem（避免UI交互冲突）
+        var eventSystems = FindObjectsOfType<UnityEngine.EventSystems.EventSystem>();
+        if (eventSystems.Length > 1)
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            foreach (var es in eventSystems)
             {
-                if (isPaused) ResumeGame();
-                else PauseGame();
+                if (es.gameObject != gameObject)
+                    Destroy(es.gameObject);
             }
         }
     }
 
-    #region 核心业务逻辑
-
-    public void PauseGame()
+    private void Start()
     {
-        isPaused = true;
-        pauseCanvas.gameObject.SetActive(true);
-        Time.timeScale = 0f; // 冻结物理和时间
-    }
-
-    public void ResumeGame()
-    {
-        isPaused = false;
-        pauseCanvas.gameObject.SetActive(false);
-        if (settingsCanvas) settingsCanvas.gameObject.SetActive(false);
-        Time.timeScale = 1f; // 恢复时间
-    }
-
-    // 打开设置界面（通常在 Pause 界面点击 "Settings" 按钮时触发）
-    public void OpenSettings()
-    {
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
-        // 如果在游戏里打开设置，隐藏暂停界面
-        // 如果在主菜单，pauseCanvas 可能是空的或不需要处理
-        if (pauseCanvas != null) 
-        {
-            pauseCanvas.gameObject.SetActive(false);
-        }
-        
-        // 打开设置界面
-        if (settingsCanvas != null) 
-        {
-            settingsCanvas.gameObject.SetActive(true);
-        }
-    }
-    // 返回暂停界面（在 Settings 界面点击 "Return" 按钮时触发）
-    public void CloseSettings()
-    {
-        settingsCanvas.gameObject.SetActive(false);
-
+        // 初始进入菜单场景时，初始化UI
         if (SceneManager.GetActiveScene().name == "Menu")
         {
-            if (mainMenuPanel != null) mainMenuPanel.SetActive(true); // 回到主菜单
+            InitializeMenuUI();
+        }
+    }
+
+    private void Update()
+    {
+        // ESC键触发暂停（非菜单场景、非渐变中）
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            string currentScene = SceneManager.GetActiveScene().name;
+            if (currentScene != "Menu" && !isFading)
+            {
+                TogglePause();
+            }
+        }
+    }
+
+    // ====== 对外暴露的场景加载方法 ======
+    // 加载菜单场景
+    public void LoadMenu()
+    {
+        LoadSceneWithFade("Menu");
+    }
+
+    // 加载First场景
+    public void LoadFirst()
+    {
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        LoadSceneWithFade("First");
+    }
+
+    // 加载Second1场景
+    public void LoadSecond1()
+    {
+        LoadSceneWithFade("Second1");
+    }
+
+    // 加载Second2场景
+    public void LoadSecond2()
+    {
+        LoadSceneWithFade("Second2");
+    }
+
+    // 加载Second3场景
+    public void LoadSecond3()
+    {
+        LoadSceneWithFade("Second3");
+    }
+
+    // 退出游戏
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    // ====== UI交互方法 ======
+    // 从菜单打开设置面板
+    public void OpenSettingsFromMenu()
+    {
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+        currentSettingsSource = SettingsSource.Menu;
+    }
+
+    // 暂停/继续游戏
+    public void TogglePause()
+    {
+        if (pauseCanvas == null) return;
+
+        bool isPaused = pauseCanvas.gameObject.activeSelf;
+        pauseCanvas.gameObject.SetActive(!isPaused);
+        Time.timeScale = isPaused ? 1f : 0f; // 暂停时时间停止
+    }
+
+    // 从暂停面板打开设置
+    public void OpenSettingsFromPause()
+    {
+        if (pauseCanvas != null && settingsPanel != null)
+        {
+            pauseCanvas.gameObject.SetActive(false);
+            settingsPanel.SetActive(true);
+            currentSettingsSource = SettingsSource.Pause;
+        }
+    }
+
+    // 关闭设置面板
+    public void CloseSettings()
+    {
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
+
+        // 根据打开来源，回到对应界面
+        switch (currentSettingsSource)
+        {
+            case SettingsSource.Menu:
+                if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+                break;
+            case SettingsSource.Pause:
+                if (pauseCanvas != null) pauseCanvas.gameObject.SetActive(true);
+                break;
+            default:
+                if (SceneManager.GetActiveScene().name == "Menu" && mainMenuPanel != null)
+                    mainMenuPanel.SetActive(true);
+                break;
+        }
+
+        currentSettingsSource = SettingsSource.None;
+    }
+
+    // ====== 核心场景加载逻辑 ======
+    // 带淡入淡出的场景加载（对外调用）
+    public void LoadSceneWithFade(string sceneName)
+    {
+        if (isFading || fadeCanvasGroup == null) return;
+        StartCoroutine(LoadSceneWithFadeRoutine(sceneName));
+    }
+
+    // 场景加载协程（内部逻辑）
+    private IEnumerator LoadSceneWithFadeRoutine(string sceneName)
+    {
+        // 隐藏当前场景的UI
+        HideCurrentSceneUI();
+
+        // 淡出（屏幕变黑）
+        yield return FadeTo(1f);
+
+        currentSettingsSource = SettingsSource.None;
+        Time.timeScale = 1f; // 恢复时间正常
+
+        // 异步加载场景（避免卡顿）
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false; // 暂停自动激活
+        while (asyncLoad.progress < 0.9f) yield return null; // 等待加载到90%
+        yield return new WaitForSecondsRealtime(0.5f);
+        asyncLoad.allowSceneActivation = true;
+        yield return new WaitUntil(() => SceneManager.GetActiveScene().name == sceneName);
+
+        // 初始化新场景UI
+        if (sceneName == "Menu")
+        {
+            InitializeMenuUI();
         }
         else
         {
-            if (pauseCanvas != null) pauseCanvas.gameObject.SetActive(true); // 回到暂停界面
+            if (pauseCanvas != null) pauseCanvas.gameObject.SetActive(false);
+            if (settingsPanel != null) settingsPanel.SetActive(false);
         }
-    }    
 
-    #endregion
-
-    #region 异步加载
-    public void LoadLevel_01()
-    {
-        //ResumeGame();
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(false); // 关闭主菜单
-        Time.timeScale = 1f;
-        StartCoroutine(LoadYourAsyncScene("Level_01"));
+        // 淡入（屏幕变亮）
+        yield return FadeTo(0f);
     }
 
-// 4. 返回主菜单
-    public void LoadMenu()
+    // 隐藏当前场景的所有UI
+    private void HideCurrentSceneUI()
     {
-        Time.timeScale = 1f;
-        if (pauseCanvas != null) pauseCanvas.gameObject.SetActive(false);
-        // 异步加载 Menu 场景
-        StartCoroutine(LoadYourAsyncScene("Menu"));
-        // 注意：mainMenuPanel 会随 GlobalManager 跨场景，
-        // 加载完成后可以在 OnSceneLoaded 里确保它被激活
-    }
+        string currentScene = SceneManager.GetActiveScene().name;
 
-    IEnumerator LoadYourAsyncScene(string sceneName)
-    {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-        while (!asyncLoad.isDone) yield return null;
-        
-        // 加载完成后，如果是回主菜单，确保菜单显示
-        if (sceneName == "Menu" && mainMenuPanel != null)
+        if (currentScene == "Menu")
         {
-            mainMenuPanel.SetActive(true);
+            var mainMenu = GameObject.Find("MainMenuPanel");
+            var settings = GameObject.Find("SettingsPanel");
+            var pause = GameObject.Find("PauseCanvas");
+            if (mainMenu != null) mainMenu.SetActive(false);
+            if (settings != null) settings.SetActive(false);
+            if (pause != null) pause.SetActive(false);
+        }
+        else
+        {
+            var pause = GameObject.Find("PauseCanvas");
+            var settings = GameObject.Find("SettingsPanel");
+            if (pause != null) pause.SetActive(false);
+            if (settings != null) settings.SetActive(false);
         }
     }
-    #endregion
+
+    // 初始化菜单场景UI
+    private void InitializeMenuUI()
+    {
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (pauseCanvas != null) pauseCanvas.gameObject.SetActive(false);
+        Time.timeScale = 1f;
+    }
+
+    // 淡入淡出渐变逻辑
+    private IEnumerator FadeTo(float targetAlpha)
+    {
+        float startAlpha = fadeCanvasGroup.alpha;
+        float elapsedTime = 0f;
+        while (elapsedTime < fadeDuration)
+        {
+            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsedTime / fadeDuration);
+            elapsedTime += Time.unscaledDeltaTime; // 不受暂停影响
+            yield return null;
+        }
+        fadeCanvasGroup.alpha = targetAlpha;
+    }
 }
