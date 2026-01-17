@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "TGJ-test.sln"
+    "dotnet.defaultSolution": "WM2.0.sln"
 }
